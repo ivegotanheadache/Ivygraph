@@ -9,7 +9,7 @@ import logging
 logging.basicConfig(filename="app.log", level=logging.DEBUG, format="%(levelname)s: %(message)s")
 
 llm = Llama(
-    model_path="/home/cobalt/Scrivania/models/Llama-3.3-70B-Instruct-Q4_K_L.gguf",
+    model_path="",
     verbose=False,
     n_ctx=8192,
     n_threads=30,
