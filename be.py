@@ -4,6 +4,7 @@ from llama_cpp import Llama
 import networkx as nx
 import sqlite3
 import logging
+import wikipediaapi
 
 
 logging.basicConfig(filename="app.log", level=logging.DEBUG, format="%(levelname)s: %(message)s")
@@ -78,6 +79,7 @@ def research(title, conn):
 
 
 def create_graph(G, conn, words):
+    #wiki = wikipediaapi.Wikipedia(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36", language="it")
     logging.debug("create graph: %s %s", conn, words)
     for word in words:
         logging.debug("Searching hyper for: %s", word)
