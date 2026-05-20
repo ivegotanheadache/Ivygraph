@@ -122,18 +122,6 @@ The python file will generate three files:
    3. app.log for logs
 ---
 
-## Repository structure
-
-```
-wonabee/
-├── graphgen.py          # main script
-├── requirements.txt
-├── .env                # API key (not committed)
-├── .gitignore
-└── poc/                # proof of concept outputs
-    ├── wordlist_example.txt   # sample wordlist output 
-    └── combinations_example.txt  # sample Wu-Palmer pairs and combinations
-```
 
 ## Disclaimer
 
