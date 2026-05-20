@@ -28,7 +28,7 @@ LIST_OF_WORDS → Graph → Expanded Graph → Wu-Palmer pairs → Synonyms → 
 
 ---
 
-## Example output (sports domain)
+## Example output
 
 Input:
 ```python
@@ -134,31 +134,6 @@ wonabee/
     ├── wordlist_example.txt   # sample wordlist output 
     └── combinations_example.txt  # sample Wu-Palmer pairs and combinations
 ```
-
----
-
-## Use cases
-
-- 🔐 **Password wordlist generation** — given a set of interests (sport teams, hobbies, favorite artists), generate a semantically rich wordlist for use in authorized penetration testing or password auditing tools like Hashcat or John the Ripper.
-  ```python
-  # Example: target is a football fan
-  LIST_OF_WORDS = ["messi", "barcelona", "champions league", "argentina"]
-  # → generates: MessiBarca, ChampionsLeague, LionelMessi, ...
-  ```
-
-- 🧠 **Domain vocabulary extraction** — derive a structured vocabulary from a topic, useful for tagging systems, search engines or NLP preprocessing.
-  ```python
-  LIST_OF_WORDS = ["pizza", "mozzarella", "olive oil", "fermentation"]
-  # → generates a semantic graph covering the cuisine domain
-  ```
-
-- 🗺️ **Ontology exploration** — visualize how concepts relate to each other in a given domain, leveraging WordNet's hypernym structure enriched with LLM knowledge.
-
-- 📊 **Data augmentation** — expand a small keyword set into a broader vocabulary for training classifiers, NER models or other NLP tasks.
-
-- 📖 **Text-based vocabulary extraction** — feed keywords extracted from a document to generate a thematic wordlist reflecting the text's semantic domain.
-
----
 
 ## Disclaimer
 
