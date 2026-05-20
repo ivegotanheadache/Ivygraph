@@ -117,9 +117,9 @@ MAX = 18       # maximum putput word length for wordlist
 ROOT = "entity.n"   # WordNet root node
 ```
 The python file will generate two files:
-``` wordlist.txt     #the output wordlist
+    wordlist.txt     #the output wordlist
     combinations.txt #found combinations of words semantically close
-```
+
 ---
 
 ## Repository structure
