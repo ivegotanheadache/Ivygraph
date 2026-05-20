@@ -107,7 +107,7 @@ Wonabee also supports a **local LLM via llama.cpp** as an alternative to OpenAI 
 LIST_OF_WORDS = ["your", "keywords", "here"]
 
 # 2. Run
-python wonabee.py
+python graphgen.py
 ```
 
 To tune generation:
@@ -125,7 +125,7 @@ The python file will generate two files:
 
 ```
 wonabee/
-├── wonabee.py          # main script
+├── graphgen.py          # main script
 ├── requirements.txt
 ├── .env                # API key (not committed)
 ├── .gitignore
