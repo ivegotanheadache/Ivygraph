@@ -116,10 +116,10 @@ MIN = 7        # minimum output word length for wordlist
 MAX = 18       # maximum putput word length for wordlist
 ROOT = "entity.n"   # WordNet root node
 ```
-The python file will generate two files:
+The python file will generate three files:
    1. wordlist.txt     #the output wordlist
    2. combinations.txt #found combinations of words semantically close
-
+   3. app.log for logs
 ---
 
 ## Repository structure
