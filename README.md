@@ -8,13 +8,13 @@ Wonabee builds a **semantic knowledge graph** starting from a small set of keywo
 
 ## How it works
 
-Given a list of keywords (`LIST_OF_WORDS`), Wonabee follows this pipeline:
+Given a list of keywords, Wonabee follows this pipeline:
 
 **1. Graph construction**
 Each keyword is placed in a semantic DAG by climbing its hypernym chain via WordNet.
 
 **2. LLM fallback**
-If a term is too specific or absent from WordNet (e.g. `cyberpunk2077`, `stardew_valley`,`rabbit`), an AI agent fetches a Wikipedia summary and iteratively finds a suitable hypernym until the term can be anchored in the graph.
+If a term is too specific or absent from WordNet, an AI agent fetches a Wikipedia summary and iteratively finds a suitable hypernym until the term can be anchored in the graph.
 
 **3. Graph expansion**
 The graph is expanded bottom-up: for each terminal node (a node with leaves), an LLM generates new contextually relevant hyponyms.
