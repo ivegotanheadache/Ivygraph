@@ -1,0 +1,41 @@
+{'words': ['cyberpunk2077', 'elden_ring'], 'wp_distance': 0.8571428571428571}
+{'words': ['cyberpunk2077', 'gears_of_war'], 'wp_distance': 0.8571428571428571}
+{'words': ['cyberpunk2077', 'halo_infinite'], 'wp_distance': 0.8571428571428571}
+{'words': ['cyberpunk2077', 'red_dead_redemption_2'], 'wp_distance': 0.8571428571428571}
+{'words': ['cyberpunk2077', 'the_witcher_3'], 'wp_distance': 0.8571428571428571}
+{'words': ['elden_ring', 'gears_of_war'], 'wp_distance': 0.8571428571428571}
+{'words': ['elden_ring', 'halo_infinite'], 'wp_distance': 0.8571428571428571}
+{'words': ['elden_ring', 'red_dead_redemption_2'], 'wp_distance': 0.8571428571428571}
+{'words': ['elden_ring', 'the_witcher_3'], 'wp_distance': 0.8571428571428571}
+{'words': ['gears_of_war', 'halo_infinite'], 'wp_distance': 0.8571428571428571}
+{'words': ['gears_of_war', 'red_dead_redemption_2'], 'wp_distance': 0.8571428571428571}
+{'words': ['gears_of_war', 'the_witcher_3'], 'wp_distance': 0.8571428571428571}
+{'words': ['halo_infinite', 'red_dead_redemption_2'], 'wp_distance': 0.8571428571428571}
+{'words': ['halo_infinite', 'the_witcher_3'], 'wp_distance': 0.8571428571428571}
+{'words': ['red_dead_redemption_2', 'the_witcher_3'], 'wp_distance': 0.8571428571428571}
+└── entity.n
+    ├── abstraction.n
+    │   └── psychological_feature.n
+    │       └── event.n
+    │           └── act.n
+    │               └── activity.n
+    │                   └── game
+    │                       ├── cyberpunk2077.n
+    │                       ├── elden_ring
+    │                       ├── gears_of_war
+    │                       ├── halo_infinite
+    │                       ├── red_dead_redemption_2
+    │                       └── the_witcher_3
+    └── physical_entity.n
+        └── object.n
+            └── whole.n
+                └── living_thing.n
+                    └── organism.n
+                        └── animal.n
+                            └── chordate.n
+                                └── vertebrate.n
+                                    └── mammal.n
+                                        └── placental.n
+                                            └── lagomorph.n
+                                                └── leporid.n
+                                                    └── rabbit
