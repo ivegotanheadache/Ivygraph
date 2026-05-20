@@ -14,7 +14,6 @@ APIKEY = os.getenv("OPENAI_API_KEY")
 
 MIN = 7 #minimun lenght for words combination s
 MAX = 18 #maximum lenght combination 
-DB_PATH = "merged.db"
 MAIN_LANGUAGE="en"
 ROOT = "entity.n"
 LIST_OF_WORDS = ["rabbit", "cyberpunk2077"]
