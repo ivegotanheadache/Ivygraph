@@ -91,18 +91,14 @@ IvyGraph also supports a **local LLM via llama.cpp** as an alternative to OpenAI
 ## Usage
 
 ```python
-# 1. Set your keywords
-LIST_OF_WORDS = ["your", "keywords", "here"]
-
-# 2. Run
-python graphgen.py
+python graphgen.py your words here
 ```
+ex. python graphgen.py messi cr7
 
 To tune generation:
 ```python
 MIN = 7        # minimum output word length for wordlist
 MAX = 18       # maximum output word length for wordlist
-ROOT = "entity.n"   # WordNet root node
 ```
 
 The python file will generate three files:
