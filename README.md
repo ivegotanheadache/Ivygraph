@@ -1,4 +1,4 @@
-# 🐝 WonaBee
+# WonaBee
 
 > A semantic graph-based wordlist generator powered by WordNet, Wikipedia and LLMs.
 
