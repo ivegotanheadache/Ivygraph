@@ -1,6 +1,6 @@
 from nltk.corpus import wordnet as wn
 from itertools import permutations, combinations
-#from llama_cpp import Llama
+from llama_cpp import Llama
 import networkx as nx
 import logging
 import wikipediaapi
@@ -336,7 +336,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     print(f"Input words: {words}")
-    wiki = wikipediaapi.Wikipedia(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36", language="en") 
+    wiki = wikipediaapi.Wikipedia(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36", language=MAIN_LANGUAGE) 
 
     G = nx.DiGraph()
     create_graph(G, words=words, wiki=wiki)

@@ -217,5 +217,5 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-.wordlist.txt
-.combinations.txt
+wordlist.txt
+combinations.txt
