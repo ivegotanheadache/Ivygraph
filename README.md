@@ -28,7 +28,7 @@ LIST_OF_WORDS → Graph → Expanded Graph → Wu-Palmer pairs → Synonyms → 
 
 ---
 
-## Example output
+## Example output 
 
 Input:
 ```python
@@ -51,8 +51,9 @@ Verstappen
 FormulaChampions
 ...
 ```
-
-See the `poc/` folder for real output examples — including sample wordlists and combination files generated from the code.
+There is a Proof of Concept in the repo that’s shows how, when given [“Cyberpunk2077”, “Rabbit”] as input, 
+it completely excludes the combination between the two due to semantic incorrelation
+See the `poc/` folder.
 
 ---
 
