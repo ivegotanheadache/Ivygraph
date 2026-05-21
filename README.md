@@ -72,6 +72,7 @@ venv\Scripts\activate
 ### 3. Install dependencies
 ```bash
 pip install -r requirements.txt
+python -c "import nltk; nltk.download('wordnet')"
 ```
 
 For local LLM support (optional):

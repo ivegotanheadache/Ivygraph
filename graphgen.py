@@ -1,11 +1,12 @@
 from nltk.corpus import wordnet as wn
 from itertools import permutations, combinations
-from llama_cpp import Llama
+#from llama_cpp import Llama
 import networkx as nx
 import logging
 import wikipediaapi
 from openai import OpenAI
 import re
+import sys
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -16,7 +17,7 @@ MIN = 7 #minimun lenght for words combination s
 MAX = 18 #maximum lenght combination 
 MAIN_LANGUAGE="en"
 ROOT = "entity.n"
-LIST_OF_WORDS = ["rabbit", "cyberpunk2077"]
+LIST_OF_WORDS = ["rabbit", "cyberpunk2077"] #example
 
 
 class Open_AI:
@@ -49,7 +50,7 @@ llm = Llama(
 )
 """
 
-logging.basicConfig(filename="app.log", level=logging.DEBUG, format="%(levelname)s: %(message)s")
+logging.basicConfig(filename="app.log", level=logging.DEBUG, format="%(levelname)s: %(message)s", encoding="utf-8")
 #----------#
 #METRICS
 
@@ -124,7 +125,8 @@ def create_graph(G, words,wiki = None):
                     break
                 
                 except Exception as e:
-                
+                    logging.warning(f"CREATE_GRAPH: No synsets found for {word}, trying to find hypernym with LLM. Error: {e}")
+                    logging.debug(f"{wiki.page('Python_(programming_language)')}")
                     try:
                         if wiki:
                             #wiki = wikipediaapi.Wikipedia(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36", language=MAIN_LANGUAGE) 
@@ -158,14 +160,11 @@ def create_graph(G, words,wiki = None):
                     #print(response_hypernym)
                     pos_letter = response_hypernym[-1].strip(' ')[0].lower()
                     hypernym = response_hypernym[0].strip().lower().replace(" ", "_")
-                    print(hypernym, pos_letter)
-
                     temp_word = word + '.' + pos_letter
-
-                    print(temp_word)
 
                     anchor_path.append(temp_word)
                     word = hypernym
+                    print(f"Trying to find hypernym for {temp_word}, got: {hypernym} with pos: {pos_letter}")
 
 
             temp_path = []        
@@ -330,20 +329,23 @@ def clean_graph(G):
     return nx.relabel_nodes(G, mapping)
 
 if __name__ == "__main__":
-    
-    
-    wiki = wikipediaapi.Wikipedia(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36", language=MAIN_LANGUAGE) 
-   
+    if len(sys.argv) > 1:
+        words = sys.argv[1:]
+    else:
+        print("No arguments provided. Exiting.")
+        sys.exit(1)
+
+    print(f"Input words: {words}")
+    wiki = wikipediaapi.Wikipedia(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36", language="en") 
+
     G = nx.DiGraph()
-    create_graph(G, words=LIST_OF_WORDS, wiki=wiki)
-    
-   
-    expand_tree(G, ROOT, LIST_OF_WORDS, extended=True)
+    create_graph(G, words=words, wiki=wiki)
+    expand_tree(G, child=ROOT, listofwords=words, extended=True)
     G = clean_graph(G)
     print(print_nx_tree(G, ROOT))
     
     try: 
-        with open("wordlist.txt", 'w') as w, open("combinations.txt", 'w') as q:
+        with open("wordlist.txt", 'w', encoding='utf-8') as w, open("combinations.txt", 'w', encoding='utf-8') as q:
             for i in find_similar_leaves(G, ROOT, min_depth = 1): 
                 
                 for j in variances(list(get_perm(i))): 
@@ -353,6 +355,6 @@ if __name__ == "__main__":
             q.write(text)
             
     except Exception as E:
-        logging.fatal(E)
+        logging.fatal("Error occurred: %s", E, exc_info=True)
     finally:    
         del llm
