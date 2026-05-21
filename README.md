@@ -51,6 +51,8 @@ See the `poc/` folder.
 ---
 
 ## Setup
+### Prerequisites:
+Python 3.14.5
 
 ### 1. Clone the repository
 ```bash
