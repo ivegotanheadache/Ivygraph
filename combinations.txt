@@ -1,7 +1,0 @@
-{'words': ['bicarbonato_de_sodio', 'cloruro_de_sodio'], 'wp_distance': 0.875}
-{'words': ['bicarbonato_de_sodio', 'peróxido_de_hidrógeno'], 'wp_distance': 0.875}
-{'words': ['bicarbonato_de_sodio', 'sulfato_de_cobre'], 'wp_distance': 0.875}
-{'words': ['bicarbonato_de_sodio', 'water'], 'wp_distance': 0.875}
-{'words': ['cloruro_de_sodio', 'peróxido_de_hidrógeno'], 'wp_distance': 0.875}
-{'words': ['cloruro_de_sodio', 'sulfato_de_cobre'], 'wp_distance': 0.875}
-{'words': ['cloruro_de_sodio', 'water'], 'wp_distance': 0.875}
