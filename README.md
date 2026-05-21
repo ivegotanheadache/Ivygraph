@@ -27,8 +27,8 @@ LIST_OF_WORDS → Graph → Expanded Graph → Wu-Palmer pairs → Synonyms → 
 ## Example output
 
 Input:
-```python
-LIST_OF_WORDS = ["football", "messi", "champions league", "tennis", "formula1", "verstappen"]
+```
+"football", "messi", "champions league", "tennis", "formula1", "verstappen"
 ```
 
 Sample generated pairs:
@@ -93,8 +93,10 @@ IvyGraph also supports a **local LLM via llama.cpp** as an alternative to OpenAI
 ```python
 python graphgen.py your words here
 ```
-ex. python graphgen.py messi cr7
-
+example 
+```
+python graphgen.py messi cr7 verstappen formula1 
+```
 To tune generation:
 ```python
 MIN = 7        # minimum output word length for wordlist
