@@ -1,7 +1,7 @@
 # IvyGraph
 > A semantic graph-based wordlist generator powered by WordNet, Wikipedia and LLMs.
 
-IvyGraph builds a **semantic knowledge graph** starting from a small set of keywords, expands it using an AI agent, and generates contextually relevant word combinations — applicable to any domain requiring semantic vocabulary expansion.
+IvyGraph builds a **semantic knowledge graph** starting from a small set of keywords, expands it using an AI agent, and generates contextually relevant word combinations applicable to any domain requiring semantic vocabulary expansion, like fuzzing, query expansion, generation of coherent and specific vocabulary, tagging...
 
 ---
 
@@ -45,8 +45,10 @@ FormulaChampions
 ...
 
 There is a Proof of Concept in the repo that's shows how, when given ["Cyberpunk2077", "Rabbit"] as input,
-it completely excludes the combination between the two due to semantic incorrelation.
-See the `poc/` folder.
+it completely excludes the combination between the two due to semantic incorrelation (See the `poc/` folder), 
+without sloppy outputs that a simple and uncontrolled response to prompt will have.
+With the graph you potentially can also control how much "expand" the depth of a word (leaf), by adding to it
+new hyponyms. That would obviously consist in a more complex graph, I'm working on personalizing those specifities.
 
 ---
 
