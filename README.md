@@ -92,28 +92,6 @@ IvyGraph also supports a **local LLM via llama.cpp** as an alternative to OpenAI
 
 ---
 
-## Usage
-
-```python
-python graphgen.py your words here
-```
-example 
-```
-python graphgen.py messi cr7 verstappen formula1 
-```
-To tune generation:
-```python
-MIN = 7        # minimum output word length for wordlist
-MAX = 18       # maximum output word length for wordlist
-```
-
-The python file will generate three files:
-   1. wordlist.txt     #the output wordlist
-   2. combinations.txt #found combinations of words semantically close
-   3. app.log for logs
-
----
-
 ## Disclaimer
 
 IvyGraph is intended for **educational, research and authorized security testing only**.
