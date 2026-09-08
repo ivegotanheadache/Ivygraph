@@ -6,16 +6,16 @@ import sys
 import networkx as nx
 from nltk.corpus import wordnet as wn
 
-from config import MAX_QUERY_ITERATIONS, EXPAND_MAX_DEPTH, EXTENDED, LINKS_FILE_PATH
+from config import MAX_QUERY_ITERATIONS, EXPAND_MAX_DEPTH, EXTENDED, LINKS_FILE_PATH, ROOT
 from llm import llm, HypernymResponse, HyponymsResponse, SynonymsResponse
 
-
+logging.basicConfig(filename="app.log", level=logging.DEBUG, format="%(levelname)s: %(message)s", encoding="utf-8", filemode="w")
 POS_MAP = {"NOUN": "n", "VERB": "v", "ADJ": "a", "ADV": "r"}
 
 
 def create_graph(G, words, wiki=None, safe_file=LINKS_FILE_PATH):
-    logging.debug(f"CREATE_GRAPH words: {words}")
-    with open(safe_file, "w", encoding="utf-8") as f:
+    with open(safe_file, "w", encoding="utf-8") as sf:
+        logging.debug(f"CREATE_GRAPH words: {words}")
         for original_word in words:
             word = original_word.strip().lower().replace(" ", "_")
             logging.debug(f"CREATE_GRAPH Searching hyper for: {word}")
@@ -87,11 +87,15 @@ def create_graph(G, words, wiki=None, safe_file=LINKS_FILE_PATH):
                     logging.debug(f"{temp_path}, {i}")
                 temp_path = temp_path + anchor_path[::-1]
 
-                print(temp_path)
-                f.write(str(temp_path) + '\n')
-                nx.add_path(G, temp_path)
+                
+                if temp_path[0] == ROOT:
+                    nx.add_path(G, temp_path)
+                    print(temp_path)
+                    sf.write(str(temp_path) + '\n')
+                else:
+                    logging.warning(f"CREATE_GRAPH: The root of the path is not {ROOT} for word '{original_word}', got: {temp_path[0]}. Skipping this path.")
+            
             except Exception as E:
-                # FIX: ora logga la parola originale, non l'ultimo iperonimo tentato.
                 logging.error(f"CREATE_GRAPH: Couldn't find a path for: {original_word} ({E})")
 
 
@@ -125,17 +129,12 @@ def add_multiple_leaves(G, child):
                     ->the already present hyponyms are: {leafs}
                """}
 
-    # Chiamata strutturata: la risposta è già una lista di stringhe validata
-    # (schema HyponymsResponse), niente più parsing testuale con .split(',').
     result = llm.create_structured_completion(
         messages=[role, request],
         schema=HyponymsResponse,
-        max_tokens=100,
         temperature=0.7,
     )
 
-    # FIX: pulizia dei nuovi nodi (spazi, maiuscole, entry vuote) per evitare
-    # duplicati "invisibili" tipo "apple" vs " Apple".
     words = [
         w.strip().lower().replace(" ", "_")
         for w in result.words
@@ -167,25 +166,20 @@ def expand_tree(G, child, extended=EXTENDED, depths=None, max_depth=EXPAND_MAX_D
 
 
 def print_nx_tree(G, node, prefix="", is_last=True):
-    #precondizione sui nodi del grafo: non devono essere più di sys.getrecursionlimit() altrimenti la stampa fallisce con RecursionError
-    max_nodes = sys.getrecursionlimit()
+    try:
+        connector = "└── " if is_last else "├── "
+        line = prefix + connector + str(node) + "\n"
+        
+        children = sorted(G.successors(node))
+        for i, child in enumerate(children):
+            is_last_child = (i == len(children) - 1)
+            extension = "    " if is_last else "│   "
+            line += print_nx_tree(G, child, prefix + extension, is_last_child)
 
-    if G.number_of_nodes() > max_nodes:
-        print(f"Il grafo ha {G.number_of_nodes()} nodi, troppo grande per essere stampato.")
-        return
-    ##
-
-
-    connector = "└── " if is_last else "├── "
-    line = prefix + connector + str(node) + "\n"
-    
-    children = sorted(G.successors(node))
-    for i, child in enumerate(children):
-        is_last_child = (i == len(children) - 1)
-        extension = "    " if is_last else "│   "
-        line += print_nx_tree(G, child, prefix + extension, is_last_child)
-
-    return line
+        return line
+    except RecursionError as e:
+        print(f"Errore di ricorsione: {e}")
+        return ""
 
 
 def find_synonyms(child):
@@ -206,7 +200,6 @@ def find_synonyms(child):
     result = llm.create_structured_completion(
         messages=[role, request],
         schema=SynonymsResponse,
-        max_tokens=100,
         temperature=0.7,
     )
 
@@ -226,16 +219,27 @@ def clean_names_graph(G):
     return nx.relabel_nodes(G, mapping)
 
 
-def clean_graph(G):
+def clean_graph(G, root):
     G = clean_names_graph(G)
     for ciclo in nx.simple_cycles(G):
         G.remove_edge(ciclo[-1], ciclo[0])
-    return G    
+
+    reachable = nx.descendants(G, root) | {root}
+    orfani = set(G.nodes) - reachable
+    if orfani:
+        logging.warning(f"CLEAN_GRAPH: rimuovo {len(orfani)} nodi non raggiungibili da root: {orfani}")
+        G.remove_nodes_from(orfani)
+
+    return G
 
 
-def temp():
-    with open('path_complete.txt', 'r') as f:
+def temp(G, links_file=LINKS_FILE_PATH):
+    with open(links_file, 'r') as f:
         for line in f:
             line = line.strip()
-            if line:  # salta righe vuote
-                yield ast.literal_eval(line)
+            if line:
+                try:
+                    path = ast.literal_eval(line)
+                    nx.add_path(G, path)
+                except (ValueError, SyntaxError) as e:
+                    logging.error(f"TEMP: riga non parsabile: {line!r} ({e})")

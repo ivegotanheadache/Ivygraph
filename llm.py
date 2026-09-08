@@ -12,6 +12,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 APIKEY = os.getenv("OPENAI_API_KEY")
+logging.basicConfig(filename="app.log", level=logging.DEBUG, format="%(levelname)s: %(message)s", encoding="utf-8", filemode="w")
 
 class HypernymResponse(BaseModel):
     hypernym: str
@@ -31,7 +32,7 @@ class BaseLLM(ABC):
         self,
         messages: list,
         schema: Type[T],
-        max_tokens: int = 100,
+        max_tokens: int = 1000,
         temperature: float = 0.7,
     ) -> T:
         raise NotImplementedError
@@ -51,7 +52,7 @@ class OpenAILLM(BaseLLM):
         except Exception as e:
             logging.warning(f"OpenAILLM: impossibile verificare la API key ora (probabile problema di rete): {e}")
 
-    def create_structured_completion(self, messages, schema, max_tokens=100, temperature=0.7):
+    def create_structured_completion(self, messages, schema, max_tokens=10000, temperature=0.7):
         response = self.client.beta.chat.completions.parse(
             model="gpt-4o-mini",
             messages=messages,

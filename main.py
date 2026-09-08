@@ -12,17 +12,17 @@ from dedup import dedupe_file
 if __name__ == "__main__":
     logging.basicConfig(filename="app.log", level=logging.DEBUG, format="%(levelname)s: %(message)s", encoding="utf-8", filemode="w")
 
-    with open("top1000.txt", "r", encoding="utf-8") as f:
-        lwords = f.read().splitlines()
-
+    
     G = nx.DiGraph()
-    create_graph(G, words=lwords)
-    print(print_nx_tree(G, ROOT)) 
-    expand_tree(G, child=ROOT)
-    print(print_nx_tree(G, ROOT))
+    with open("input.txt", "r", encoding="utf-8") as f:
+        words = f.read().splitlines()
+    
+    create_graph(G, words=words)
+    G = clean_graph(G, ROOT)
+    #clean_graph(G)
 
     try:
-        with open("wordlist.txt", 'w', encoding='utf-8') as w, open("combinations.txt", 'w', encoding='utf-8') as q:
+        with open("files/wordlist.txt", 'w', encoding='utf-8') as w, open("files/combinations.txt", 'w', encoding='utf-8') as q:
             for i in find_similar_leaves(G, ROOT, min_depth=1):
                 for j in variances(list(get_perm(i))):
                     w.write(j + '\n')
@@ -31,4 +31,4 @@ if __name__ == "__main__":
     except Exception as E:
         logging.fatal("Error occurred: %s", E, exc_info=True)
     
-    dedupe_file("wordlist.txt", "wordlist_deduped.txt")
+    dedupe_file("files/wordlist.txt", "files/wordlist_deduped.txt")

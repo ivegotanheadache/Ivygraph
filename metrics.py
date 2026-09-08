@@ -2,6 +2,9 @@ import logging
 import networkx as nx
 from itertools import combinations
 
+logging.basicConfig(filename="app.log", level=logging.DEBUG, format="%(levelname)s: %(message)s", encoding="utf-8", filemode="w")
+
+
 def get_leaves(G):
     return [n for n in G.nodes if G.out_degree(n) == 0]
 
@@ -41,13 +44,15 @@ def find_similar_leaves(G, root, threshold=0.7, min_depth=2):
                 common = (n for n in small if n in large)
                 lcs_node = max(common, key=lambda n: depths.get(n, -1), default=None)
                 if lcs_node is None:
-                    # FIX: era un errore di sintassi (continue non indentato),
-                    # bloccava l'esecuzione dell'intero script.
                     continue
                 try:
                     score = 2 * depths[lcs_node] / (depths[a] + depths[b])
                 except Exception as e:
-                    logging.debug(f"FIND_SIMILAR_LEAVES: impossibile calcolare lo score per ({a},{b}): {e}")
+                    depths_a = depths.get(a, 'N/A')
+                    depths_b = depths.get(b, 'N/A')
+                    """percorso_a = nx.shortest_path(G, source=root, target=a)
+                    percorso_b = nx.shortest_path(G, source=root, target=b)"""
+                    logging.debug(f"FIND_SIMILAR_LEAVES, impossibile calcolare lo score per ({a},{b}, {depths_a}, {depths_b}) {e}")
                     score = 0
                 if score >= threshold:
                     yield -score, a, b
