@@ -1,7 +1,7 @@
 import logging
 import networkx as nx
 
-from config import ROOT, LIST_OF_WORDS, EXPAND_MAX_DEPTH
+from config import ROOT, LIST_OF_WORDS
 from llm import llm  # noqa: F401
 from graph import *
 from metrics import find_similar_leaves
@@ -11,12 +11,14 @@ from dedup import dedupe_file
 
 if __name__ == "__main__":
     logging.basicConfig(filename="app.log", level=logging.DEBUG, format="%(levelname)s: %(message)s", encoding="utf-8", filemode="w")
-    
-    G = nx.DiGraph()
 
-    create_graph(G, words=LIST_OF_WORDS)
-    print(print_nx_tree(G, ROOT))
-    expand_tree(G, child=ROOT, max_depth=EXPAND_MAX_DEPTH)
+    with open("top1000.txt", "r", encoding="utf-8") as f:
+        lwords = f.read().splitlines()
+
+    G = nx.DiGraph()
+    create_graph(G, words=lwords)
+    print(print_nx_tree(G, ROOT)) 
+    expand_tree(G, child=ROOT)
     print(print_nx_tree(G, ROOT))
 
     try:

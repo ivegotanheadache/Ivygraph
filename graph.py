@@ -2,99 +2,97 @@ import logging
 import time
 import re
 import ast
+import sys
 import networkx as nx
 from nltk.corpus import wordnet as wn
 
-from config import MAX_QUERY_ITERATIONS, EXPAND_MAX_DEPTH, EXTENDED
+from config import MAX_QUERY_ITERATIONS, EXPAND_MAX_DEPTH, EXTENDED, LINKS_FILE_PATH
 from llm import llm, HypernymResponse, HyponymsResponse, SynonymsResponse
 
-# Mappatura tra le categorie grammaticali restituite dall'LLM (schema HypernymResponse)
-# e le lettere di categoria usate da WordNet. ADV -> 'r' (non 'a', che è già ADJ).
+
 POS_MAP = {"NOUN": "n", "VERB": "v", "ADJ": "a", "ADV": "r"}
 
 
-def create_graph(G, words, wiki=None):
+def create_graph(G, words, wiki=None, safe_file=LINKS_FILE_PATH):
     logging.debug(f"CREATE_GRAPH words: {words}")
-    for original_word in words:
-        word = original_word.strip().lower().replace(" ", "_")
-        logging.debug(f"CREATE_GRAPH Searching hyper for: {word}")
-        anchor_path = []
-        paths = []
-        try:
-            for _ in range(0, MAX_QUERY_ITERATIONS):
-                word = word.strip().lower().replace(" ", "_")
-                try:
-                    candidate_synsets = wn.synsets(word)
-                    synset = candidate_synsets[0]
-                    paths = synset.hypernym_paths()[0]
-                    logging.debug(f"->before path {paths}")
-                    paths.pop()
-                    paths.append(word)
-                    logging.debug(f"->after path {paths}, {word}")
-                    break
-
-                except Exception as e:
-                    logging.warning(f"CREATE_GRAPH: No synsets found for {word}, trying to find hypernym with LLM. Error: {e}")
-                    summary = "NO DESCRIPTION FOUND"
+    with open(safe_file, "w", encoding="utf-8") as f:
+        for original_word in words:
+            word = original_word.strip().lower().replace(" ", "_")
+            logging.debug(f"CREATE_GRAPH Searching hyper for: {word}")
+            anchor_path = []
+            paths = []
+            try:
+                for _ in range(0, MAX_QUERY_ITERATIONS):
+                    word = word.strip().lower().replace(" ", "_")
                     try:
-                        if wiki:
-                            page = wiki.page(word)
-                            summary = page.summary[0:60]
-                            logging.debug(f"CREATE_GRAPH: page for {word}, status: {page.exists()}, summary: {summary}")
-                    except Exception as wiki_e:
-                        logging.debug(f"CREATE_GRAPH: Wikipedia lookup failed for {word}: {wiki_e}")
+                        candidate_synsets = wn.synsets(word)
+                        synset = candidate_synsets[0]
+                        paths = synset.hypernym_paths()[0]
+                        logging.debug(f"->before path {paths}")
+                        paths.pop()
+                        paths.append(word)
+                        logging.debug(f"->after path {paths}, {word}")
+                        break
+
+                    except Exception as e:
+                        logging.warning(f"CREATE_GRAPH: No synsets found for {word}, trying to find hypernym with LLM. Error: {e}")
                         summary = "NO DESCRIPTION FOUND"
+                        try:
+                            if wiki:
+                                page = wiki.page(word)
+                                summary = page.summary[0:60]
+                                logging.debug(f"CREATE_GRAPH: page for {word}, status: {page.exists()}, summary: {summary}")
+                        except Exception as wiki_e:
+                            logging.debug(f"CREATE_GRAPH: Wikipedia lookup failed for {word}: {wiki_e}")
+                            summary = "NO DESCRIPTION FOUND"
 
-                    role_hyper = {"role": "system", "content": """ you are an agent IA with the task of finding a hypernym for a given word.
-                    The output must be EXCLUSIVELY AND ONLY the hypernym found, composed by ONLY ONE WORD.
-                    You will have a description and a list of words that describe contexts.
-                    If context and description have no correlation, find an hypernym for the meaning of that word in that context.
-                    Also classify the word as NOUN, VERB, ADJ or ADV.
-                    """}
+                        role_hyper = {"role": "system", "content": """ you are an agent IA with the task of finding a hypernym for a given word.
+                        The output must be EXCLUSIVELY AND ONLY the hypernym found, composed by ONLY ONE WORD.
+                        You will have a description and a list of words that describe contexts.
+                        If context and description have no correlation, find an hypernym for the meaning of that word in that context.
+                        Also classify the word as NOUN, VERB, ADJ or ADV.
+                        """}
 
-                    request = {"role": "user", "content": f"""Find a hypernym for '{word}'
-                                based in this context: {words}
-                                based on this description (if present, else without descrition): {summary}
-                                Then classify THE WORD as NOUN, VERB, ADJ or ADV."""}
-                    logging.debug("request: %s", request)
+                        request = {"role": "user", "content": f"""Find a hypernym for '{word}'
+                                    based in this context: {words}
+                                    based on this description (if present, else without descrition): {summary}
+                                    Then classify THE WORD as NOUN, VERB, ADJ or ADV."""}
+                        logging.debug("request: %s", request)
 
-                    try:
-                        # Chiamata strutturata: la risposta è già validata contro
-                        # lo schema HypernymResponse (hypernym: str, pos: Literal[...]),
-                        # niente più parsing testuale con .split(',').
-                        result = llm.create_structured_completion(
-                            messages=[role_hyper, request],
-                            schema=HypernymResponse,
-                            max_tokens=20,
-                            temperature=0.5,
-                        )
-                        hypernym = result.hypernym.strip().lower().replace(" ", "_")
-                        pos_letter = POS_MAP[result.pos]
-                    except Exception as parse_e:
-                        # FIX: prima un output LLM malformato veniva inghiottito
-                        # dall'except più esterno senza un log specifico.
-                        logging.error(f"CREATE_GRAPH: risposta LLM non valida per '{word}': {parse_e}")
-                        raise
+                        try:
+                            result = llm.create_structured_completion(
+                                messages=[role_hyper, request],
+                                schema=HypernymResponse,
+                                max_tokens=20,
+                                temperature=0.5,
+                            )
+                            hypernym = result.hypernym.strip().lower().replace(" ", "_")
+                            pos_letter = POS_MAP[result.pos]
+                        except Exception as parse_e:
+                            logging.error(f"CREATE_GRAPH: risposta LLM non valida per '{word}': {parse_e}")
+                            raise
 
-                    temp_word = word + '.' + pos_letter
-                    anchor_path.append(temp_word)
-                    word = hypernym
-                    print(f"Trying to find hypernym for {temp_word}, got: {hypernym} with pos: {pos_letter}")
+                        temp_word = word + '.' + pos_letter
+                        anchor_path.append(temp_word)
+                        word = hypernym
+                        print(f"Trying to find hypernym for {temp_word}, got: {hypernym} with pos: {pos_letter}")
 
-            temp_path = []
-            for i in paths:
-                if not isinstance(i, str):
-                    i = i.name()
-                    temp_path.append('.'.join(i.split('.')[0:-1]))
-                else:
-                    temp_path.append(i)
-                logging.debug(f"{temp_path}, {i}")
-            temp_path = temp_path + anchor_path[::-1]
-            print(temp_path)
-            nx.add_path(G, temp_path)
-        except Exception as E:
-            # FIX: ora logga la parola originale, non l'ultimo iperonimo tentato.
-            logging.error(f"CREATE_GRAPH: Couldn't find a path for: {original_word} ({E})")
+                temp_path = []
+                for i in paths:
+                    if not isinstance(i, str):
+                        i = i.name()
+                        temp_path.append('.'.join(i.split('.')[0:-1]))
+                    else:
+                        temp_path.append(i)
+                    logging.debug(f"{temp_path}, {i}")
+                temp_path = temp_path + anchor_path[::-1]
+
+                print(temp_path)
+                f.write(str(temp_path) + '\n')
+                nx.add_path(G, temp_path)
+            except Exception as E:
+                # FIX: ora logga la parola originale, non l'ultimo iperonimo tentato.
+                logging.error(f"CREATE_GRAPH: Couldn't find a path for: {original_word} ({E})")
 
 
 def substitute_leaf(G, old_leaf, new_leaf):
@@ -149,7 +147,7 @@ def add_multiple_leaves(G, child):
         nx.add_path(G, [child_str, word])
 
 
-def expand_tree(G, child, extended=EXTENDED, depths=None, max_depth=10):
+def expand_tree(G, child, extended=EXTENDED, depths=None, max_depth=EXPAND_MAX_DEPTH):
 
     if depths is None:
         root = next(n for n in G.nodes if G.in_degree(n) == 0)
@@ -169,9 +167,18 @@ def expand_tree(G, child, extended=EXTENDED, depths=None, max_depth=10):
 
 
 def print_nx_tree(G, node, prefix="", is_last=True):
+    #precondizione sui nodi del grafo: non devono essere più di sys.getrecursionlimit() altrimenti la stampa fallisce con RecursionError
+    max_nodes = sys.getrecursionlimit()
+
+    if G.number_of_nodes() > max_nodes:
+        print(f"Il grafo ha {G.number_of_nodes()} nodi, troppo grande per essere stampato.")
+        return
+    ##
+
+
     connector = "└── " if is_last else "├── "
     line = prefix + connector + str(node) + "\n"
-
+    
     children = sorted(G.successors(node))
     for i, child in enumerate(children):
         is_last_child = (i == len(children) - 1)
@@ -217,6 +224,7 @@ def clean_node_name(name: str) -> str:
 def clean_names_graph(G):
     mapping = {n: clean_node_name(n) for n in G.nodes if n != clean_node_name(n)}
     return nx.relabel_nodes(G, mapping)
+
 
 def clean_graph(G):
     G = clean_names_graph(G)
