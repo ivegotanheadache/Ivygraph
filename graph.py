@@ -56,7 +56,8 @@ def create_graph(G, words, wiki=None, safe_file=LINKS_FILE_PATH):
                         request = {"role": "user", "content": f"""Find a hypernym for '{word}'
                                     based in this context: {words}
                                     based on this description (if present, else without descrition): {summary}
-                                    Then classify THE WORD as NOUN, VERB, ADJ or ADV."""}
+                                    Then classify THE WORD as NOUN, VERB, ADJ or ADV.
+                                    HYPERNYM MUST BE IN ENGLISH, AND MUST BE A SINGLE WORD."""}
                         logging.debug("request: %s", request)
 
                         try:
@@ -185,7 +186,7 @@ def print_nx_tree(G, node, prefix="", is_last=True):
 def find_synonyms(child):
     child_str = str(child)
     role = {"role": "system",
-            "content": """ you are an agent IA with the role to find from 1 to max 5 new synonyms for a given proper or improper noun.
+            "content": """ you are an agent IA with the role to findsynonyms for a given proper or improper noun.
                             Synonyms MUST be in the IN THE ORIGINAL LANGUAGE of the given input.
                             If it is a improper noun, just find normal synonyms. (Like: house, home ...)
                             If it is an proper noun, use instead known variations of that name (like: Messi, Lionel Messi, The goat ...)
@@ -193,14 +194,14 @@ def find_synonyms(child):
 
                             """}
 
-    request = {"role": "user", "content": f"""FIND SYNONYMS ONLY IN THE SAME LANGUAGE OF THAT WORD : {child_str} """}
+    request = {"role": "user", "content": f"""FIND SYNONYMS STRICTLY IN THE SAME LANGUAGE OF THAT WORD : {child_str} """}
 
     # Chiamata strutturata: la risposta è già una lista di stringhe validata
     # (schema SynonymsResponse), niente più parsing testuale con .split(',').
     result = llm.create_structured_completion(
         messages=[role, request],
         schema=SynonymsResponse,
-        temperature=0.7,
+        temperature=0.5,
     )
 
     words = [w.strip().lower() for w in result.words if w.strip()]

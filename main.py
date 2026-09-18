@@ -14,17 +14,15 @@ if __name__ == "__main__":
 
     
     G = nx.DiGraph()
-    with open("input.txt", "r", encoding="utf-8") as f:
-        words = f.read().splitlines()
-    
-    create_graph(G, words=words)
+    create_graph(G, words=LIST_OF_WORDS)
     G = clean_graph(G, ROOT)
-    #clean_graph(G)
+    expand_tree(G, ROOT, max_depth=3)
+    clean_graph(G,ROOT)
 
     try:
         with open("files/wordlist.txt", 'w', encoding='utf-8') as w, open("files/combinations.txt", 'w', encoding='utf-8') as q:
             for i in find_similar_leaves(G, ROOT, min_depth=1):
-                for j in variances(list(get_perm(i))):
+                for j in variances(list(get_perm(i)), skip_short=True, skip_long=True):
                     w.write(j + '\n')
                 q.write(str(i) + '\n')
 

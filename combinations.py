@@ -8,11 +8,11 @@ def get_perm(comb):
     print(comb, A, B)
     for a in A:
         for b in B:
-            yield {"combination": [str(a), str(b)], "wp_distance": comb["wp_distance"]}
+            yield [str(a), str(b)]
 
 def variances(combs, skip_short=True, skip_long=False):
     for combination in combs:
-        sett = combination['combination']
+        sett = combination
         alphabet = [
             word
             for i in sett
@@ -20,6 +20,7 @@ def variances(combs, skip_short=True, skip_long=False):
             if (not skip_short or len(word) > 2)
             and (not skip_long or len(word) < 11)
         ]
+        print(alphabet)
         for j in range(1, len(alphabet) + 1):
             for p in permutations(alphabet, j):
                 word = ''.join(p).capitalize()
