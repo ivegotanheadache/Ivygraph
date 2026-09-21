@@ -1,13 +1,18 @@
 from itertools import permutations
 from graph import find_synonyms
 from config import MIN_CHAR_TOTAL, MAX_CHAR_TOTAL
+import re
 
 def get_perm(comb):
-    A = find_synonyms(comb["words"][0])
-    B = find_synonyms(comb["words"][1])
+    A = find_synonyms(comb[0])
+    A.append(comb[0])
+    B = find_synonyms(comb[1])
+    B.append(comb[1])
     print(comb, A, B)
     for a in A:
+        a = re.sub(r'[^A-Za-z0-9\s]', '', a)
         for b in B:
+            b = re.sub(r'[^A-Za-z0-9\s]', '', b)
             yield [str(a), str(b)]
 
 def variances(combs, skip_short=True, skip_long=False):
@@ -20,7 +25,6 @@ def variances(combs, skip_short=True, skip_long=False):
             if (not skip_short or len(word) > 2)
             and (not skip_long or len(word) < 11)
         ]
-        print(alphabet)
         for j in range(1, len(alphabet) + 1):
             for p in permutations(alphabet, j):
                 word = ''.join(p).capitalize()
