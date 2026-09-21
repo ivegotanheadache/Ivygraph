@@ -84,11 +84,38 @@ For local LLM support (optional):
 pip install llama-cpp-python
 ```
 
-### 4. Configure your API key
+### 4. Configure your API key and config.py
 Create a `.env` file in the project root:
 OPENAI_API_KEY=your_key_here
 
 IvyGraph also supports a **local LLM via llama.cpp** as an alternative to OpenAI — uncomment the `Llama` block in the source and set your model path.
+
+Then configure the `config.py` file with you settings
+
+```
+MAX_HYPONYMS = 5   # Maximum number of hyponyms to add to the graph for each leaf
+MAX_SYNONYMS = 2   # Maximum number of synonyms to consider for each combination of words
+MAX_QUERY_ITERATIONS = 11   # Maximum number of iterations for each wikipedia/llm query
+MIN_CHAR_TOTAL = 0   # Minimum total number of characters for outputs final result
+MAX_CHAR_TOTAL = 12   # Maximum total number of characters outputs final result
+EXPAND_MAX_DEPTH = 15   # Maximum depth to expand the graph
+EXTENDED = True   # Whether to use extended graph expansion
+
+
+BACKEND = "openai"  # "openai" \ "llama"
+LOCAL_LLAMA_PATH = ""  
+ROOT = "entity.n"          #DO NOT CHANGE THIS VALUE, IT IS THE ROOT OF THE GRAPH     
+LIST_OF_WORDS = []         #LIST OF INPUT WORDS
+LINKS_FILE_PATH = "files/graph_links.txt" 
+WORDLIST_FILE_PATH = "files/wordlist.txt"
+COMBINATIONS_FILE_PATH = "files/combinations.txt"
+```
+### 5. Run
+
+Run the main.py
+`python3 .\main.py`
+
+
 
 ---
 
