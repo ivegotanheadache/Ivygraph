@@ -219,7 +219,7 @@ __marimo__/
 
 wordlist.txt
 combinations.txt
-
+config.py
 *.txt
 *.sorted
 *.gexf
