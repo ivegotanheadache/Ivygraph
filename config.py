@@ -9,7 +9,7 @@ EXTENDED = True   # Whether to use extended graph expansion
 
 BACKEND = "openai"  # "openai" \ "llama"
 LOCAL_LLAMA_PATH = "models/llama-2-7b-chat.gguf.q4_0.bin"  
-ROOT = "entity.n"             
+ROOT = "entity.n"    #DO NOT CHANGE THIS VALUE, IT IS THE ROOT OF THE GRAPH         
 LIST_OF_WORDS = ["calcio", "linkin park"]
 LINKS_FILE_PATH = "files/graph_links.txt" 
 WORDLIST_FILE_PATH = "files/wordlist.txt"
