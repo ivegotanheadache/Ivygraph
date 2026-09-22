@@ -1,31 +1,52 @@
-import platform
-import subprocess
+import heapq
+import os
+import tempfile
 
 
-def dedupe_file(input_path: str, output_path: str) -> None:
-    """
-    Deduplica un file di parole (una per riga) senza caricarlo mai per
-    intero in memoria. Stessa strategia su entrambe le piattaforme:
-    1) ordina il file su disco (comando esterno, non in RAM Python)
-    2) rimuove le righe duplicate adiacenti in streaming, tenendo in
-       memoria solo l'ultima riga vista (come fa `uniq` su Unix).
-    """
-    if platform.system() == "Windows":
-        sorted_path = input_path + ".sorted"
-        # sort.exe nativo di Windows: ordina su disco, non carica tutto in RAM.
-        subprocess.run(["sort", input_path, "/O", sorted_path], check=True, shell=True)
-        _dedupe_adjacent(sorted_path, output_path)
-    else:
-        sorted_path = input_path + ".sorted"
-        with open(sorted_path, "w", encoding="utf-8") as out:
-            subprocess.run(["sort", input_path], stdout=out, check=True, env={"LC_ALL": "C"})
-        _dedupe_adjacent(sorted_path, output_path)
+def dedupe_file(input_path: str, output_path: str, chunk_size_lines: int = 100_000) -> None:
+    """ External Merge Sort"""
+    temp_files = []
 
+    try:
+        # 1. Lettura a blocchi (chunk), ordinamento in RAM e salvataggio su disco
+        with open(input_path, "r", encoding="utf-8") as f:
+            chunk = []
+            for line in f:
+                chunk.append(line)
+                if len(chunk) >= chunk_size_lines:
+                    chunk.sort()
+                    t = tempfile.NamedTemporaryFile("w+", encoding="utf-8", delete=False)
+                    t.writelines(chunk)
+                    t.close()
+                    temp_files.append(t.name)
+                    chunk.clear()
 
-def _dedupe_adjacent(sorted_path: str, output_path: str) -> None:
-    with open(sorted_path, encoding="utf-8") as f, open(output_path, "w", encoding="utf-8") as out:
-        prev = None
-        for line in f:
-            if line != prev:
-                out.write(line)
-                prev = line
+            # Processa l'ultimo blocco rimanente
+            if chunk:
+                chunk.sort()
+                t = tempfile.NamedTemporaryFile("w+", encoding="utf-8", delete=False)
+                t.writelines(chunk)
+                t.close()
+                temp_files.append(t.name)
+
+        # 2. Apertura di tutti i file temporanei
+        file_handles = [open(tf, "r", encoding="utf-8") for tf in temp_files]
+
+        # 3. K-way Merge in streaming con heapq.merge e deduplicazione adiacente
+        with open(output_path, "w", encoding="utf-8") as out:
+            prev = None
+            # heapq.merge legge riga per riga da ciascun file in modo efficiente
+            for line in heapq.merge(*file_handles):
+                if line != prev:
+                    out.write(line)
+                    prev = line
+
+        # Chiusura degli handle
+        for fh in file_handles:
+            fh.close()
+
+    finally:
+        # Pulizia dei file temporanei creati su disco
+        for tf in temp_files:
+            if os.path.exists(tf):
+                os.remove(tf)

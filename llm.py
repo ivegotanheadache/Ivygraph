@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Literal, Type, TypeVar
 from abc import ABC, abstractmethod
+from functools import lru_cache
 import logging
 import json
 
@@ -103,6 +104,10 @@ class LocalLlamaLLM(BaseLLM):
         raw_json = response["choices"][0]["message"]["content"]
         return schema.model_validate_json(raw_json)
 
+
+
+
+@lru_cache(maxsize=1)
 def get_llm() -> BaseLLM:
     match BACKEND:
         case "openai":
@@ -112,4 +117,3 @@ def get_llm() -> BaseLLM:
         case _:
             raise ValueError(f"Backend sconosciuto in config.BACKEND: '{BACKEND}' (atteso 'openai' o 'llama')")
 
-llm = get_llm()

@@ -7,11 +7,12 @@ import networkx as nx
 from nltk.corpus import wordnet as wn
 
 from config import MAX_QUERY_ITERATIONS, EXPAND_MAX_DEPTH, EXTENDED, LINKS_FILE_PATH, ROOT
-from llm import llm, HypernymResponse, HyponymsResponse, SynonymsResponse
+from llm import get_llm, HypernymResponse, HyponymsResponse, SynonymsResponse
 
 logging.basicConfig(filename="app.log", level=logging.DEBUG, format="%(levelname)s: %(message)s", encoding="utf-8", filemode="w")
 POS_MAP = {"NOUN": "n", "VERB": "v", "ADJ": "a", "ADV": "r"}
 
+llm = get_llm()
 
 def create_graph(G, words, wiki=None, safe_file=LINKS_FILE_PATH):
     with open(safe_file, "w", encoding="utf-8") as sf:

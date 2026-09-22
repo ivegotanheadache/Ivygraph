@@ -14,3 +14,4 @@ LIST_OF_WORDS = ["calcio", "linkin park"]
 LINKS_FILE_PATH = "files/graph_links.txt" 
 WORDLIST_FILE_PATH = "files/wordlist.txt"
 COMBINATIONS_FILE_PATH = "files/combinations.txt"
+WORDLIST_DEDUPLICATED_FILE_PATH = "files/wordlist_deduped.txt"
