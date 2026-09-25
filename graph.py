@@ -5,21 +5,30 @@ import ast
 import sys
 import networkx as nx
 from nltk.corpus import wordnet as wn
+from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
+from openai import RateLimitError, APITimeoutError, APIConnectionError
+
+llm_retry = retry(
+    retry=retry_if_exception_type((RateLimitError, APITimeoutError, APIConnectionError)),
+    wait=wait_exponential(multiplier=1, min=2, max=30),
+    stop=stop_after_attempt(5),
+    reraise=True,
+)
 
 from config import MAX_QUERY_ITERATIONS, EXPAND_MAX_DEPTH, EXTENDED, LINKS_FILE_PATH, ROOT
 from llm import get_llm, HypernymResponse, HyponymsResponse, SynonymsResponse
 
-logging.basicConfig(filename="app.log", level=logging.DEBUG, format="%(levelname)s: %(message)s", encoding="utf-8", filemode="w")
+logger = logging.getLogger(__name__)
 POS_MAP = {"NOUN": "n", "VERB": "v", "ADJ": "a", "ADV": "r"}
 
-llm = get_llm()
 
 def create_graph(G, words, wiki=None, safe_file=LINKS_FILE_PATH):
+    llm = get_llm()
     with open(safe_file, "w", encoding="utf-8") as sf:
-        logging.debug(f"CREATE_GRAPH words: {words}")
+        logger.debug(f"CREATE_GRAPH words: {words}")
         for original_word in words:
             word = original_word.strip().lower().replace(" ", "_")
-            logging.debug(f"CREATE_GRAPH Searching hyper for: {word}")
+            logger.debug(f"CREATE_GRAPH Searching hyper for: {word}")
             anchor_path = []
             paths = []
             try:
@@ -29,22 +38,22 @@ def create_graph(G, words, wiki=None, safe_file=LINKS_FILE_PATH):
                         candidate_synsets = wn.synsets(word)
                         synset = candidate_synsets[0]
                         paths = synset.hypernym_paths()[0]
-                        logging.debug(f"->before path {paths}")
+                        logger.debug(f"->before path {paths}")
                         paths.pop()
                         paths.append(word)
-                        logging.debug(f"->after path {paths}, {word}")
+                        logger.debug(f"->after path {paths}, {word}")
                         break
 
                     except Exception as e:
-                        logging.warning(f"CREATE_GRAPH: No synsets found for {word}, trying to find hypernym with LLM. Error: {e}")
+                        logger.warning(f"CREATE_GRAPH: No synsets found for {word}, trying to find hypernym with LLM. Error: {e}")
                         summary = "NO DESCRIPTION FOUND"
                         try:
                             if wiki:
                                 page = wiki.page(word)
                                 summary = page.summary[0:60]
-                                logging.debug(f"CREATE_GRAPH: page for {word}, status: {page.exists()}, summary: {summary}")
+                                logger.debug(f"CREATE_GRAPH: page for {word}, status: {page.exists()}, summary: {summary}")
                         except Exception as wiki_e:
-                            logging.debug(f"CREATE_GRAPH: Wikipedia lookup failed for {word}: {wiki_e}")
+                            logger.debug(f"CREATE_GRAPH: Wikipedia lookup failed for {word}: {wiki_e}")
                             summary = "NO DESCRIPTION FOUND"
 
                         role_hyper = {"role": "system", "content": """ you are an agent IA with the task of finding a hypernym for a given word.
@@ -59,10 +68,10 @@ def create_graph(G, words, wiki=None, safe_file=LINKS_FILE_PATH):
                                     based on this description (if present, else without descrition): {summary}
                                     Then classify THE WORD as NOUN, VERB, ADJ or ADV.
                                     HYPERNYM MUST BE IN ENGLISH, AND MUST BE A SINGLE WORD."""}
-                        logging.debug("request: %s", request)
+                        logger.debug("request: %s", request)
 
                         try:
-                            result = llm.create_structured_completion(
+                            result = llm_retry(llm.create_structured_completion)(
                                 messages=[role_hyper, request],
                                 schema=HypernymResponse,
                                 max_tokens=20,
@@ -71,7 +80,7 @@ def create_graph(G, words, wiki=None, safe_file=LINKS_FILE_PATH):
                             hypernym = result.hypernym.strip().lower().replace(" ", "_")
                             pos_letter = POS_MAP[result.pos]
                         except Exception as parse_e:
-                            logging.error(f"CREATE_GRAPH: risposta LLM non valida per '{word}': {parse_e}")
+                            logger.error(f"CREATE_GRAPH: risposta LLM non valida per '{word}': {parse_e}")
                             raise
 
                         temp_word = word + '.' + pos_letter
@@ -86,7 +95,7 @@ def create_graph(G, words, wiki=None, safe_file=LINKS_FILE_PATH):
                         temp_path.append('.'.join(i.split('.')[0:-1]))
                     else:
                         temp_path.append(i)
-                    logging.debug(f"{temp_path}, {i}")
+                    logger.debug(f"{temp_path}, {i}")
                 temp_path = temp_path + anchor_path[::-1]
 
                 
@@ -95,10 +104,10 @@ def create_graph(G, words, wiki=None, safe_file=LINKS_FILE_PATH):
                     print(temp_path)
                     sf.write(str(temp_path) + '\n')
                 else:
-                    logging.warning(f"CREATE_GRAPH: The root of the path is not {ROOT} for word '{original_word}', got: {temp_path[0]}. Skipping this path.")
+                    logger.warning(f"CREATE_GRAPH: The root of the path is not {ROOT} for word '{original_word}', got: {temp_path[0]}. Skipping this path.")
             
             except Exception as E:
-                logging.error(f"CREATE_GRAPH: Couldn't find a path for: {original_word} ({E})")
+                logger.error(f"CREATE_GRAPH: Couldn't find a path for: {original_word} ({E})")
 
 
 def substitute_leaf(G, old_leaf, new_leaf):
@@ -112,8 +121,9 @@ def substitute_leaf(G, old_leaf, new_leaf):
     G.remove_node(old_leaf)
     return G
 
-
+@llm_retry
 def add_multiple_leaves(G, child):
+    llm = get_llm()
     child_str = str(child)
     leafs = [n for n in G.successors(child) if G.out_degree(n) == 0]
     role = {"role": "system",
@@ -143,7 +153,7 @@ def add_multiple_leaves(G, child):
         if w.strip()
     ]
 
-    logging.debug(f"FUNCTION ADD_MULTIPLE_LEAVES, \n HYPER: {child_str} \n HYPOS:  {leafs} \n GENERATED: {words}")
+    logger.debug(f"FUNCTION ADD_MULTIPLE_LEAVES, \n HYPER: {child_str} \n HYPOS:  {leafs} \n GENERATED: {words}")
     for word in words:
         nx.add_path(G, [child_str, word])
 
@@ -183,8 +193,9 @@ def print_nx_tree(G, node, prefix="", is_last=True):
         print(f"Errore di ricorsione: {e}")
         return ""
 
-
+@llm_retry
 def find_synonyms(child):
+    llm = get_llm()
     child_str = str(child)
     role = {"role": "system",
             "content": """ you are an agent IA with the role to findsynonyms for a given proper or improper noun.
@@ -229,7 +240,7 @@ def clean_graph(G, root):
     reachable = nx.descendants(G, root) | {root}
     orfani = set(G.nodes) - reachable
     if orfani:
-        logging.warning(f"CLEAN_GRAPH: rimuovo {len(orfani)} nodi non raggiungibili da root: {orfani}")
+        logger.warning(f"CLEAN_GRAPH: rimuovo {len(orfani)} nodi non raggiungibili da root: {orfani}")
         G.remove_nodes_from(orfani)
 
     return G
@@ -244,4 +255,4 @@ def temp(G, links_file=LINKS_FILE_PATH):
                     path = ast.literal_eval(line)
                     nx.add_path(G, path)
                 except (ValueError, SyntaxError) as e:
-                    logging.error(f"TEMP: riga non parsabile: {line!r} ({e})")
+                    logger.error(f"TEMP: riga non parsabile: {line!r} ({e})")

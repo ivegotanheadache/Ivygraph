@@ -13,7 +13,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 APIKEY = os.getenv("OPENAI_API_KEY")
-logging.basicConfig(filename="app.log", level=logging.DEBUG, format="%(levelname)s: %(message)s", encoding="utf-8", filemode="w")
+logger = logging.getLogger(__name__)
 
 class HypernymResponse(BaseModel):
     hypernym: str
@@ -43,15 +43,15 @@ class BaseLLM(ABC):
 class OpenAILLM(BaseLLM):
     def __init__(self):
         if not APIKEY:
-            logging.warning("OpenAILLM: nessuna API key fornita")
+            logger.warning("OpenAILLM: nessuna API key fornita")
         self.client = OpenAI(api_key=APIKEY)
         try:
             self.client.models.list()
         except AuthenticationError as e:
-            logging.error(f"OpenAILLM: API key non valida o revocata: {e}")
+            logger.error(f"OpenAILLM: API key non valida o revocata: {e}")
             raise
         except Exception as e:
-            logging.warning(f"OpenAILLM: impossibile verificare la API key ora (probabile problema di rete): {e}")
+            logger.warning(f"OpenAILLM: impossibile verificare la API key ora (probabile problema di rete): {e}")
 
     def create_structured_completion(self, messages, schema, max_tokens=10000, temperature=0.7):
         response = self.client.beta.chat.completions.parse(
@@ -71,7 +71,7 @@ class LocalLlamaLLM(BaseLLM):
         try: 
             from llama_cpp import Llama, LlamaGrammar
         except ImportError as e:
-            logging.error(f"LocalLlamaLLM: impossibile importare llama_cpp: {e}")
+            logger.error(f"LocalLlamaLLM: impossibile importare llama_cpp: {e}")
             raise
 
         if not LOCAL_LLAMA_PATH or not os.path.isfile(LOCAL_LLAMA_PATH):
@@ -88,7 +88,7 @@ class LocalLlamaLLM(BaseLLM):
                 n_batch=n_batch,
             )
         except Exception as e:
-            logging.error(f"LocalLlamaLLM: impossibile caricare il modello da '{LOCAL_LLAMA_PATH}': {e}")
+            logger.error(f"LocalLlamaLLM: impossibile caricare il modello da '{LOCAL_LLAMA_PATH}': {e}")
             raise
 
     def create_structured_completion(self, messages, schema, max_tokens=100, temperature=0.7):

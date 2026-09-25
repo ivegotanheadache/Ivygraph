@@ -1,4 +1,4 @@
-MAX_HYPONYMS = 5   # Maximum number of hyponyms to add to the graph for each leaf
+MAX_HYPONYMS = 10   # Maximum number of hyponyms to add to the graph for each leaf
 MAX_SYNONYMS = 2   # Maximum number of synonyms to consider for each combination of words
 MAX_QUERY_ITERATIONS = 11   # Maximum number of iterations for each wikipedia/llm query
 MIN_CHAR_TOTAL = 0   # Minimum total number of characters for outputs final result
